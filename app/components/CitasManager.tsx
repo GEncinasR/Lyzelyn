@@ -70,6 +70,10 @@ export default function CitasManager() {
   const [citaActual, setCitaActual] = useState<string | null>(null);
 
   const [formulario, setFormulario] = useState(formularioInicial);
+  
+  const [busqueda, setBusqueda] = useState("");
+
+  const [alertaEliminar, setAlertaEliminar] = useState<{ id: string; nombre: string } | null>(null);
 
   useEffect(() => {
     try {
@@ -173,8 +177,19 @@ export default function CitasManager() {
     cerrarFormulario();
   }
 
+    function confirmarEliminar() {
+    if (!alertaEliminar) return;
+    
+    setCitas((anteriores) => anteriores.filter((cita) => cita.id !== alertaEliminar.id));
+    setAlertaEliminar(null);
+  }
+
   const citasOrdenadas = [...citas].sort((a, b) =>
     a.fecha.localeCompare(b.fecha)
+  );
+
+    const citasFiltradas = citasOrdenadas.filter((cita) =>
+    cita.telefono.includes(busqueda)
   );
 
   const proximasCitas = citasOrdenadas.filter(
@@ -244,14 +259,16 @@ export default function CitasManager() {
                 placeholder="Número telefónico"
                 maxLength={10}
                 inputMode="numeric"
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value.replace(/\D/g, ""))}
                 className="min-w-0 flex-1 rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-pink"
               />
 
               <button
                 type="button"
-                disabled
-                title="La búsqueda será integrada por otro desarrollador"
-                className="rounded-lg bg-pink px-4 text-white opacity-60"
+                onClick={() => setBusqueda("")}
+                title="Limpiar búsqueda"
+                className="rounded-lg bg-pink px-4 text-white transition hover:brightness-95"
               >
                 <Search size={18} />
               </button>
@@ -345,7 +362,7 @@ export default function CitasManager() {
             </thead>
 
             <tbody className="divide-y divide-neutral-100">
-              {citasOrdenadas.map((cita) => (
+              {citasFiltradas.map((cita) => (
                 <tr
                   key={cita.id}
                   className="transition hover:bg-pink/5"
@@ -384,13 +401,12 @@ export default function CitasManager() {
 
                       <button
                         type="button"
-                        disabled
-                        title="La eliminación será integrada por otro desarrollador"
-                        className="cursor-not-allowed rounded-lg p-2 text-red-500 opacity-40"
+                        onClick={() => setAlertaEliminar({ id: cita.id, nombre: cita.nombre })}
+                        title="Eliminar cita"
+                        className="rounded-lg p-2 text-red-500 transition hover:bg-red-50"
                       >
                         <Trash2 size={18} />
                       </button>
-
                     </div>
                   </td>
                 </tr>
@@ -719,6 +735,41 @@ export default function CitasManager() {
               </div>
 
             </form>
+          </div>
+        </div>
+      )}
+
+       {alertaEliminar && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 text-center shadow-2xl">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
+              <Trash2 size={32} className="text-red-600" />
+            </div>
+            
+            <h3 className="mb-2 text-xl font-bold text-neutral-800">
+              ¿Eliminar cita?
+            </h3>
+            
+            <p className="mb-6 text-neutral-600">
+              ¿Estás seguro de que deseas eliminar la cita de <strong>{alertaEliminar.nombre}</strong>? Esta acción no se puede deshacer.
+            </p>
+            
+            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-center">
+              <button
+                type="button"
+                onClick={() => setAlertaEliminar(null)}
+                className="rounded-xl border border-neutral-300 px-6 py-3 font-semibold text-neutral-600 transition hover:bg-neutral-100"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={confirmarEliminar}
+                className="rounded-xl bg-red-500 px-6 py-3 font-semibold text-white transition hover:bg-red-600"
+              >
+                Sí, eliminar
+              </button>
+            </div>
           </div>
         </div>
       )}
