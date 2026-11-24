@@ -5,6 +5,7 @@ import logo from "@/public/fotos/lizelin/logo.jpg";
 const navItems = [
   { label: "Inicio", href: "/" },
   { label: "Servicios", href: "/servicios" },
+  { label: "Citas", href: "/citas" },
   { label: "Nosotros", href: "/nosotros" },
   { label: "Contacto", href: "/contacto" },
 ];
