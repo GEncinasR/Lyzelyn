@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-pink: #efaaa2;
+  --color-white: #f7f7f7;
+  --font-sans: var(--font-source-sans);
+  --font-display: var(--font-playfair);
+}
+
+body {
+  background-color: var(--color-white);
+  background-image: linear-gradient(
+    to bottom,
+    var(--color-white) 0%,
+    color-mix(in srgb, var(--color-pink) 20%, var(--color-white)) 50%,
+    var(--color-white) 100%
+  );
+  background-attachment: fixed;
+  color: #262626;
+  font-family: var(--font-source-sans), Arial, Helvetica, sans-serif;
+}
