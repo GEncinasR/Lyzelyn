@@ -5,7 +5,7 @@ import { useCallback } from "react";
 import type { KeyboardEvent } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import { beforeAfterPairs } from "@/lib/gallery";
-import { mediaUrl } from "@/lib/media";
+import { MEDIA_BASE_URL } from "@/lib/media";
 import { useEmblaControls } from "./useEmblaControls";
 
 const slides = beforeAfterPairs.flatMap((pair) => [
@@ -44,7 +44,7 @@ export default function ImageCarousel() {
   );
 
   return (
-    <div className="w-full">
+    <div className="mx-auto w-full max-w-lg">
       <div
         ref={emblaRef}
         role="region"
@@ -52,19 +52,19 @@ export default function ImageCarousel() {
         aria-label="Galería de fotos"
         tabIndex={0}
         onKeyDown={onKeyDown}
-        className="overflow-hidden rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-pink focus-visible:ring-offset-2"
+        className="overflow-hidden rounded-3xl bg-white shadow-lg ring-1 ring-pink/40 outline-none focus-visible:ring-2 focus-visible:ring-pink focus-visible:ring-offset-2"
       >
         <div className="flex touch-pan-y select-none">
           {slides.map((slide, index) => (
             <div key={slide.id} className="min-w-0 flex-[0_0_100%]">
-              <figure className="relative aspect-[4/5] w-full bg-neutral-100">
+              <figure className="relative aspect-[4/5] w-full bg-pink/10">
                 <Image
-                  src={mediaUrl(slide.src)}
+                  src={`${MEDIA_BASE_URL}/${slide.src}`}
                   alt={slide.alt}
                   fill
                   unoptimized
                   priority={index === 0}
-                  sizes="(min-width: 1024px) 60vw, 100vw"
+                  sizes="(min-width: 640px) 32rem, 100vw"
                   className="object-contain"
                 />
               </figure>

@@ -9,31 +9,17 @@ import {
   Trash2,
   X,
   Phone,
-  User,
   Clock,
 } from "lucide-react";
-
-interface Cita {
-  id: string;
-  nombre: string;
-  edad: string;
-  telefono: string;
-  fecha: string;
-  condiciones: string;
-  cirugiaEstetica: string;
-  detalleCirugia: string;
-  trabaja: string;
-  estatura: string;
-  peso: string;
-}
-
-const STORAGE_KEY = "lizelyn_citas";
+import { ToastContainer, toast } from "react-toastify";
+import { useCitasStore, type Cita } from "@/lib/citasStore";
 
 const formularioInicial: Omit<Cita, "id"> = {
   nombre: "",
   edad: "",
   telefono: "",
   fecha: "",
+  hora: "",
   condiciones: "",
   cirugiaEstetica: "No",
   detalleCirugia: "",
@@ -51,58 +37,37 @@ function obtenerFechaActual() {
   return `${anio}-${mes}-${dia}`;
 }
 
-// Convertir los dígitos de estatura a formato 1.70.
-function formatearEstatura(valor: string) {
+function formatearEstatura(valor: string, borrando: boolean) {
   const numeros = valor.replace(/\D/g, "").slice(0, 3);
 
   if (numeros.length === 0) return "";
-  if (numeros.length === 1) return numeros + ".";
+  if (numeros.length === 1) return borrando ? numeros : numeros + ".";
   return numeros[0] + "." + numeros.slice(1);
 }
 
 export default function CitasManager() {
-  const [citas, setCitas] = useState<Cita[]>([]);
-  const [cargado, setCargado] = useState(false);
+  const citas = useCitasStore((estado) => estado.citas);
+  const hidratado = useCitasStore((estado) => estado.hidratado);
+  const agregarCita = useCitasStore((estado) => estado.agregarCita);
+  const actualizarCita = useCitasStore((estado) => estado.actualizarCita);
+  const eliminarCita = useCitasStore((estado) => estado.eliminarCita);
 
   const [modalAbierto, setModalAbierto] = useState(false);
   const [modoEdicion, setModoEdicion] = useState(false);
 
   const [citaActual, setCitaActual] = useState<string | null>(null);
+  const [fechaOriginal, setFechaOriginal] = useState("");
 
   const [formulario, setFormulario] = useState(formularioInicial);
-  
+  const [error, setError] = useState<string | null>(null);
+
   const [busqueda, setBusqueda] = useState("");
 
   const [alertaEliminar, setAlertaEliminar] = useState<{ id: string; nombre: string } | null>(null);
 
   useEffect(() => {
-    try {
-      const datosGuardados = localStorage.getItem(STORAGE_KEY);
-
-      if (datosGuardados) {
-        const datos = JSON.parse(datosGuardados);
-
-        if (Array.isArray(datos)) {
-          setCitas(datos);
-        }
-      }
-    } catch (error) {
-      console.error("Error al cargar las citas:", error);
-    } finally {
-      setCargado(true);
-    }
+    useCitasStore.persist.rehydrate();
   }, []);
-
-  useEffect(() => {
-    if (!cargado) return;
-
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(citas));
-    } catch (error) {
-      console.error("Error al guardar las citas:", error);
-    }
-  }, [citas, cargado]);
-
 
   function actualizarCampo(
     campo: keyof typeof formulario,
@@ -118,15 +83,19 @@ export default function CitasManager() {
     setFormulario(formularioInicial);
     setModoEdicion(false);
     setCitaActual(null);
+    setFechaOriginal("");
+    setError(null);
     setModalAbierto(true);
   }
 
   function editarCita(cita: Cita) {
     const { id, ...datos } = cita;
 
-    setFormulario(datos);
+    setFormulario({ ...datos, hora: datos.hora ?? "" });
     setCitaActual(id);
+    setFechaOriginal(cita.fecha);
     setModoEdicion(true);
+    setError(null);
     setModalAbierto(true);
   }
 
@@ -134,6 +103,8 @@ export default function CitasManager() {
     setModalAbierto(false);
     setFormulario(formularioInicial);
     setCitaActual(null);
+    setFechaOriginal("");
+    setError(null);
   }
 
 
@@ -144,34 +115,55 @@ export default function CitasManager() {
       formulario.cirugiaEstetica === "Sí" &&
       !formulario.detalleCirugia.trim()
     ) {
-      alert("Describe qué cirugia estética te has realizado.");
+      setError("Describe qué cirugía estética te has realizado.");
       return;
     }
 
-    if (formulario.fecha < obtenerFechaActual()) {
-      alert("No puedes seleccionar una fecha anterior a hoy.");
+    if (formulario.fecha < obtenerFechaActual() && formulario.fecha !== fechaOriginal) {
+      setError("No puedes seleccionar una fecha anterior a hoy.");
+      return;
+    }
+
+    if (Number(formulario.edad) < 12 || Number(formulario.edad) > 90) {
+      setError("Ingresa una edad válida (entre 12 y 90 años).");
+      return;
+    }
+
+    if (!/^\d\.\d{1,2}$/.test(formulario.estatura) || Number(formulario.estatura) < 1.4 || Number(formulario.estatura) > 2.4) {
+      setError("Ingresa una estatura válida (entre 1.40 y 2.40 metros).");
+      return;
+    }
+
+    if (!/^\d+(\.\d{1,2})?$/.test(formulario.peso) || Number(formulario.peso) < 40 || Number(formulario.peso) > 320) {
+      setError("Ingresa un peso válido (entre 40 y 320 kg).");
+      return;
+    }
+
+    const horarioOcupado = citas.some(
+      (cita) =>
+        cita.id !== citaActual &&
+        cita.fecha === formulario.fecha &&
+        cita.hora === formulario.hora
+    );
+
+    if (horarioOcupado) {
+      setError("Ya hay una cita registrada ese día a esa hora.");
       return;
     }
 
     if (modoEdicion && citaActual) {
-      setCitas((anteriores) =>
-        anteriores.map((cita) =>
-          cita.id === citaActual
-            ? { ...formulario, id: citaActual }
-            : cita
-        )
-      );
+      actualizarCita({ ...formulario, id: citaActual });
 
-      alert("Cita actualizada");
+      toast.success("Cita actualizada.");
     } else {
       const nuevaCita: Cita = {
         ...formulario,
         id: crypto.randomUUID(),
       };
 
-      setCitas((anteriores) => [...anteriores, nuevaCita]);
+      agregarCita(nuevaCita);
 
-      alert("Tu cita se a agendado correctamente. ¡Te esperamos!");
+      toast.success("Tu cita se ha agendado correctamente. ¡Te esperamos!");
     }
 
     cerrarFormulario();
@@ -180,23 +172,24 @@ export default function CitasManager() {
     function confirmarEliminar() {
     if (!alertaEliminar) return;
     
-    setCitas((anteriores) => anteriores.filter((cita) => cita.id !== alertaEliminar.id));
+    eliminarCita(alertaEliminar.id);
+    toast.success(`Se eliminó la cita de ${alertaEliminar.nombre}.`);
     setAlertaEliminar(null);
   }
 
   const citasOrdenadas = [...citas].sort((a, b) =>
-    a.fecha.localeCompare(b.fecha)
+    a.fecha.localeCompare(b.fecha) || (a.hora ?? "").localeCompare(b.hora ?? "")
   );
 
     const citasFiltradas = citasOrdenadas.filter((cita) =>
     cita.telefono.includes(busqueda)
   );
 
-  const proximasCitas = citasOrdenadas.filter(
+  const proximasCitas = citasFiltradas.filter(
     (cita) => cita.fecha >= obtenerFechaActual()
   );
 
-  if (!cargado) {
+  if (!hidratado) {
     return (
       <main className="mx-auto w-full max-w-6xl px-4 py-16">
         <p className="text-center text-neutral-500">
@@ -257,6 +250,7 @@ export default function CitasManager() {
               <input
                 type="tel"
                 placeholder="Número telefónico"
+                aria-label="Buscar por número telefónico"
                 maxLength={10}
                 inputMode="numeric"
                 value={busqueda}
@@ -267,10 +261,12 @@ export default function CitasManager() {
               <button
                 type="button"
                 onClick={() => setBusqueda("")}
+                disabled={!busqueda}
+                aria-label="Limpiar búsqueda"
                 title="Limpiar búsqueda"
-                className="rounded-lg bg-pink px-4 text-white transition hover:brightness-95"
+                className="rounded-lg bg-pink px-4 text-white transition hover:brightness-95 disabled:opacity-40"
               >
-                <Search size={18} />
+                <X size={18} />
               </button>
             </div>
           </div>
@@ -297,11 +293,15 @@ export default function CitasManager() {
             />
 
             <h3 className="text-lg font-semibold text-neutral-800">
-              Aun no tienes citas registradas
+              {busqueda
+                ? "No hay próximas citas con ese número"
+                : "Aún no tienes citas registradas"}
             </h3>
 
             <p className="mt-2 text-sm text-neutral-500">
-              Agenda tu primera cita y aparecera aqui.
+              {busqueda
+                ? "Revisa el número o limpia la búsqueda."
+                : "Agenda tu primera cita y aparecerá aquí."}
             </p>
           </div>
         ) : (
@@ -329,6 +329,11 @@ export default function CitasManager() {
                 </p>
 
                 <p className="mt-2 flex items-center gap-2 text-sm text-neutral-500">
+                  <Clock size={16} />
+                  {cita.hora || "Sin hora"}
+                </p>
+
+                <p className="mt-2 flex items-center gap-2 text-sm text-neutral-500">
                   <Phone size={16} />
                   {cita.telefono}
                 </p>
@@ -350,10 +355,11 @@ export default function CitasManager() {
               <tr>
                 <th className="p-4">Nombre</th>
                 <th className="p-4">Edad</th>
-                <th className="p-4">Telefono</th>
+                <th className="p-4">Teléfono</th>
                 <th className="p-4">Fecha</th>
-                <th className="p-4">Condiciones medicas</th>
-                <th className="p-4">Cirugia estetica</th>
+                <th className="p-4">Hora</th>
+                <th className="p-4">Condiciones médicas</th>
+                <th className="p-4">Cirugía estética</th>
                 <th className="p-4">¿Trabaja?</th>
                 <th className="p-4">Estatura</th>
                 <th className="p-4">Peso</th>
@@ -374,6 +380,7 @@ export default function CitasManager() {
                   <td className="p-4">{cita.edad}</td>
                   <td className="p-4">{cita.telefono}</td>
                   <td className="p-4">{cita.fecha}</td>
+                  <td className="p-4">{cita.hora || "—"}</td>
 
                   <td className="max-w-48 truncate p-4" title={cita.condiciones}>
                     {cita.condiciones || "Ninguna"}
@@ -393,6 +400,7 @@ export default function CitasManager() {
                       <button
                         type="button"
                         onClick={() => editarCita(cita)}
+                        aria-label={`Editar cita de ${cita.nombre}`}
                         title="Editar cita"
                         className="rounded-lg p-2 text-blue-600 transition hover:bg-blue-50"
                       >
@@ -402,6 +410,7 @@ export default function CitasManager() {
                       <button
                         type="button"
                         onClick={() => setAlertaEliminar({ id: cita.id, nombre: cita.nombre })}
+                        aria-label={`Eliminar cita de ${cita.nombre}`}
                         title="Eliminar cita"
                         className="rounded-lg p-2 text-red-500 transition hover:bg-red-50"
                       >
@@ -412,13 +421,15 @@ export default function CitasManager() {
                 </tr>
               ))}
 
-              {citas.length === 0 && (
+              {citasFiltradas.length === 0 && (
                 <tr>
                   <td
-                    colSpan={10}
+                    colSpan={11}
                     className="p-10 text-center text-neutral-500"
                   >
-                    No hay citas registradas todavía.
+                    {busqueda
+                      ? "No se encontraron citas con ese número."
+                      : "No hay citas registradas todavía."}
                   </td>
                 </tr>
               )}
@@ -429,17 +440,22 @@ export default function CitasManager() {
 
 
       {modalAbierto && (
-        <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4"
+        <dialog
+          ref={(dialogo) => {
+            if (dialogo && !dialogo.open) dialogo.showModal();
+          }}
+          aria-labelledby="titulo-formulario"
+          onClose={cerrarFormulario}
           onMouseDown={(e) => {
             if (e.target === e.currentTarget) cerrarFormulario();
           }}
+          className="m-auto w-[calc(100%-2rem)] max-w-2xl bg-transparent p-0 backdrop:bg-black/50"
         >
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl sm:p-8">
+          <div className="max-h-[90vh] w-full overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl sm:p-8">
 
             <div className="mb-7 flex items-center justify-between">
               <div>
-                <h2 className="font-display text-2xl font-bold text-pink">
+                <h2 id="titulo-formulario" className="font-display text-2xl font-bold text-pink">
                   {modoEdicion ? "Editar cita" : "Agendar cita"}
                 </h2>
 
@@ -464,11 +480,12 @@ export default function CitasManager() {
             <form onSubmit={guardarCita} className="space-y-5">
 
               <div>
-                <label className="mb-2 block text-sm font-semibold text-neutral-700">
+                <label htmlFor="cita-nombre" className="mb-2 block text-sm font-semibold text-neutral-700">
                   Nombre completo *
                 </label>
 
                 <input
+                  id="cita-nombre"
                   type="text"
                   required
                   maxLength={100}
@@ -484,11 +501,12 @@ export default function CitasManager() {
               <div className="grid gap-5 sm:grid-cols-2">
 
                 <div>
-                  <label className="mb-2 block text-sm font-semibold text-neutral-700">
+                  <label htmlFor="cita-edad" className="mb-2 block text-sm font-semibold text-neutral-700">
                     Edad *
                   </label>
 
                   <input
+                    id="cita-edad"
                     type="text"
                     inputMode="numeric"
                     required
@@ -506,11 +524,12 @@ export default function CitasManager() {
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-semibold text-neutral-700">
-                    Numero telefonico *
+                  <label htmlFor="cita-telefono" className="mb-2 block text-sm font-semibold text-neutral-700">
+                    Número telefónico *
                   </label>
 
                   <input
+                    id="cita-telefono"
                     type="tel"
                     inputMode="numeric"
                     required
@@ -530,48 +549,69 @@ export default function CitasManager() {
 
               </div>
 
-              <div>
-                <label className="mb-2 block text-sm font-semibold text-neutral-700">
-                  Fecha de la cita *
-                </label>
+              <div className="grid gap-5 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="cita-fecha" className="mb-2 block text-sm font-semibold text-neutral-700">
+                    Fecha de la cita *
+                  </label>
 
-                <input
-                  type="date"
-                  required
-                  min={obtenerFechaActual()}
-                  value={formulario.fecha}
-                  onChange={(e) =>
-                    actualizarCampo("fecha", e.target.value)
-                  }
-                  className="w-full rounded-xl border border-neutral-300 px-4 py-3 outline-none focus:border-pink"
-                />
+                  <input
+                    id="cita-fecha"
+                    type="date"
+                    required
+                    min={modoEdicion && fechaOriginal && fechaOriginal < obtenerFechaActual() ? fechaOriginal : obtenerFechaActual()}
+                    value={formulario.fecha}
+                    onChange={(e) =>
+                      actualizarCampo("fecha", e.target.value)
+                    }
+                    className="w-full rounded-xl border border-neutral-300 px-4 py-3 outline-none focus:border-pink"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="cita-hora" className="mb-2 block text-sm font-semibold text-neutral-700">
+                    Hora de la cita *
+                  </label>
+
+                  <input
+                    id="cita-hora"
+                    type="time"
+                    required
+                    value={formulario.hora}
+                    onChange={(e) =>
+                      actualizarCampo("hora", e.target.value)
+                    }
+                    className="w-full rounded-xl border border-neutral-300 px-4 py-3 outline-none focus:border-pink"
+                  />
+                </div>
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-semibold text-neutral-700">
-                  ¿Presentas alguna condicion medica?
+                <label htmlFor="cita-condiciones" className="mb-2 block text-sm font-semibold text-neutral-700">
+                  ¿Presentas alguna condición médica?
                 </label>
 
                 <textarea
+                  id="cita-condiciones"
                   rows={3}
                   maxLength={500}
                   value={formulario.condiciones}
                   onChange={(e) =>
                     actualizarCampo("condiciones", e.target.value)
                   }
-                  placeholder="Describe tus condiciones medicas o escribe Ninguna."
+                  placeholder="Describe tus condiciones médicas o escribe Ninguna."
                   className="w-full resize-none rounded-xl border border-neutral-300 px-4 py-3 outline-none focus:border-pink"
                 />
               </div>
 
         
 
-              <div className="rounded-xl bg-pink/5 p-4">
-                <label className="mb-3 block text-sm font-semibold text-neutral-700">
-                  ¿Te has realizado alguna cirugia estetica?
-                </label>
+              <fieldset className="rounded-xl bg-pink/5 p-4">
+                <legend className="float-left mb-3 w-full text-sm font-semibold text-neutral-700">
+                  ¿Te has realizado alguna cirugía estética?
+                </legend>
 
-                <div className="flex gap-6">
+                <div className="clear-left flex gap-6">
 
                   {["Sí", "No"].map((opcion) => (
                     <label
@@ -601,11 +641,12 @@ export default function CitasManager() {
 
                 {formulario.cirugiaEstetica === "Sí" && (
                   <div className="mt-4">
-                    <label className="mb-2 block text-sm font-semibold text-neutral-700">
-                      ¿Cuales cirugias te has realizado? *
+                    <label htmlFor="cita-detalle-cirugia" className="mb-2 block text-sm font-semibold text-neutral-700">
+                      ¿Cuáles cirugías te has realizado? *
                     </label>
 
                     <textarea
+                      id="cita-detalle-cirugia"
                       required
                       rows={2}
                       maxLength={500}
@@ -613,21 +654,21 @@ export default function CitasManager() {
                       onChange={(e) =>
                         actualizarCampo("detalleCirugia", e.target.value)
                       }
-                      placeholder="Describe las cirugias realizadas."
+                      placeholder="Describe las cirugías realizadas."
                       className="w-full rounded-xl border border-neutral-300 px-4 py-3 outline-none focus:border-pink"
                     />
                   </div>
                 )}
-              </div>
+              </fieldset>
 
      
 
-              <div>
-                <label className="mb-3 block text-sm font-semibold text-neutral-700">
+              <fieldset>
+                <legend className="float-left mb-3 w-full text-sm font-semibold text-neutral-700">
                   ¿Actualmente trabajas?
-                </label>
+                </legend>
 
-                <div className="flex gap-6">
+                <div className="clear-left flex gap-6">
 
                   {["Sí", "No"].map((opcion) => (
                     <label
@@ -650,18 +691,19 @@ export default function CitasManager() {
                   ))}
 
                 </div>
-              </div>
+              </fieldset>
 
-       
+
 
               <div className="grid gap-5 sm:grid-cols-2">
 
                 <div>
-                  <label className="mb-2 block text-sm font-semibold text-neutral-700">
+                  <label htmlFor="cita-estatura" className="mb-2 block text-sm font-semibold text-neutral-700">
                     Estatura (metros) *
                   </label>
 
                   <input
+                    id="cita-estatura"
                     type="text"
                     inputMode="decimal"
                     required
@@ -670,7 +712,7 @@ export default function CitasManager() {
                     onChange={(e) =>
                       actualizarCampo(
                         "estatura",
-                        formatearEstatura(e.target.value)
+                        formatearEstatura(e.target.value, e.target.value.length < formulario.estatura.length)
                       )
                     }
                     placeholder="Ej. 1.70"
@@ -683,11 +725,12 @@ export default function CitasManager() {
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-semibold text-neutral-700">
+                  <label htmlFor="cita-peso" className="mb-2 block text-sm font-semibold text-neutral-700">
                     Peso (kg) *
                   </label>
 
                   <input
+                    id="cita-peso"
                     type="text"
                     inputMode="decimal"
                     required
@@ -713,7 +756,14 @@ export default function CitasManager() {
 
               </div>
 
-              {}
+              {error && (
+                <p
+                  role="alert"
+                  className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700"
+                >
+                  {error}
+                </p>
+              )}
 
               <div className="flex flex-col-reverse gap-3 border-t border-neutral-100 pt-6 sm:flex-row sm:justify-end">
 
@@ -736,21 +786,32 @@ export default function CitasManager() {
 
             </form>
           </div>
-        </div>
+        </dialog>
       )}
 
        {alertaEliminar && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 text-center shadow-2xl">
+        <dialog
+          ref={(dialogo) => {
+            if (dialogo && !dialogo.open) dialogo.showModal();
+          }}
+          aria-labelledby="titulo-eliminar"
+          aria-describedby="texto-eliminar"
+          onClose={() => setAlertaEliminar(null)}
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setAlertaEliminar(null);
+          }}
+          className="m-auto w-[calc(100%-2rem)] max-w-md bg-transparent p-0 backdrop:bg-black/50"
+        >
+          <div className="w-full rounded-2xl bg-white p-6 text-center shadow-2xl">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
               <Trash2 size={32} className="text-red-600" />
             </div>
             
-            <h3 className="mb-2 text-xl font-bold text-neutral-800">
+            <h3 id="titulo-eliminar" className="mb-2 text-xl font-bold text-neutral-800">
               ¿Eliminar cita?
             </h3>
             
-            <p className="mb-6 text-neutral-600">
+            <p id="texto-eliminar" className="mb-6 text-neutral-600">
               ¿Estás seguro de que deseas eliminar la cita de <strong>{alertaEliminar.nombre}</strong>? Esta acción no se puede deshacer.
             </p>
             
@@ -771,9 +832,10 @@ export default function CitasManager() {
               </button>
             </div>
           </div>
-        </div>
+        </dialog>
       )}
 
+      <ToastContainer position="top-right" theme="light" />
     </main>
   );
 }

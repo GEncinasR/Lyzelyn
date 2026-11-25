@@ -2,7 +2,7 @@ import Image from "next/image";
 import PageText from "./components/PageText";
 import ImageCarousel from "./components/ImageCarousel";
 import { highlightImages } from "@/lib/gallery";
-import { mediaUrl } from "@/lib/media";
+import { MEDIA_BASE_URL } from "@/lib/media";
 
 export default function Home() {
   const [firstHighlight, secondHighlight, thirdHighlight] = highlightImages;
@@ -23,39 +23,54 @@ export default function Home() {
 
       <div className="grid grid-cols-2 gap-4 sm:gap-6">
         <div className="flex flex-col justify-center gap-4 sm:gap-6">
-          <div className="relative aspect-square overflow-hidden rounded-2xl">
+          <a
+            href={`${MEDIA_BASE_URL}/${firstHighlight.src}`}
+            target="_blank"
+            rel="noreferrer"
+            className="relative aspect-square overflow-hidden rounded-2xl"
+          >
             <Image
-              src={mediaUrl(firstHighlight.src)}
+              src={`${MEDIA_BASE_URL}/${firstHighlight.src}`}
               alt={firstHighlight.alt}
               fill
               unoptimized
               sizes="(min-width: 1024px) 40vw, 45vw"
               className="object-cover"
             />
-          </div>
+          </a>
         </div>
 
         <div className="flex flex-col justify-center gap-4 sm:gap-6">
-          <div className="relative aspect-[4/5] overflow-hidden rounded-2xl">
+          <a
+            href={`${MEDIA_BASE_URL}/${secondHighlight.src}`}
+            target="_blank"
+            rel="noreferrer"
+            className="relative aspect-[4/5] overflow-hidden rounded-2xl"
+          >
             <Image
-              src={mediaUrl(secondHighlight.src)}
+              src={`${MEDIA_BASE_URL}/${secondHighlight.src}`}
               alt={secondHighlight.alt}
               fill
               unoptimized
               sizes="(min-width: 1024px) 40vw, 45vw"
               className="object-cover"
             />
-          </div>
-          <div className="relative aspect-[4/5] overflow-hidden rounded-2xl">
+          </a>
+          <a
+            href={`${MEDIA_BASE_URL}/${thirdHighlight.src}`}
+            target="_blank"
+            rel="noreferrer"
+            className="relative aspect-[4/5] overflow-hidden rounded-2xl"
+          >
             <Image
-              src={mediaUrl(thirdHighlight.src)}
+              src={`${MEDIA_BASE_URL}/${thirdHighlight.src}`}
               alt={thirdHighlight.alt}
               fill
               unoptimized
               sizes="(min-width: 1024px) 40vw, 45vw"
               className="object-cover"
             />
-          </div>
+          </a>
         </div>
       </div>
     </main>

@@ -1,57 +1,26 @@
 # Lizelyn Beauty
 
-Sitio web de Lizelyn Beauty construido con [Next.js](https://nextjs.org) (App Router), React, Tailwind CSS y Prisma.
+Página web del salón Lizelyn Beauty. Hecha con Next.js, React y Tailwind.
 
-## Requisitos
+## Cómo correrlo
 
-- Node.js 20+
-- npm
-
-## Configuración local
-
-1. Instala las dependencias:
+Necesitas Node.js 20 o más nuevo.
 
 ```bash
 npm install
-```
-
-2. Copia el archivo de variables de entorno y ajusta los valores:
-
-```bash
-cp .env.example .env
-```
-
-Variables disponibles:
-
-| Variable                       | Descripción                                                        |
-| ------------------------------ | ------------------------------------------------------------------ |
-| `DATABASE_URL`                 | Cadena de conexión a PostgreSQL usada por Prisma.                  |
-| `NEXT_PUBLIC_MEDIA_BASE_URL`   | URL base donde están alojadas las fotos. Si está vacía se usa `/fotos/lizelin`. |
-
-3. Genera el cliente de Prisma:
-
-```bash
-npx prisma generate
-```
-
-4. Inicia el servidor de desarrollo:
-
-```bash
 npm run dev
 ```
 
-Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
+Luego abre http://localhost:3000
 
-## Scripts
+## Comandos
 
-| Comando         | Descripción                          |
-| --------------- | ------------------------------------ |
-| `npm run dev`   | Inicia el servidor de desarrollo.    |
-| `npm run build` | Crea la versión de producción.       |
-| `npm start`     | Sirve la versión de producción.      |
-| `npm run lint`  | Ejecuta ESLint.                      |
+- `npm run dev`: corre el proyecto en modo desarrollo
+- `npm run build`: hace el build para producción
+- `npm start`: corre el build
+- `npm run lint`: revisa el código con ESLint
 
-## Medios
+## Fotos y video
 
-Las fotos de la galería y los resultados se cargan desde `NEXT_PUBLIC_MEDIA_BASE_URL`.
-Solo el logo (`public/fotos/lizelin/logo.jpg`) se guarda en el repositorio.
+Las fotos y el video están en el servidor de la escuela. La dirección está en `lib/media.ts`.
+En el proyecto solo está el logo (`public/fotos/lizelin/logo.jpg`).

@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { Instagram, MessageCircle } from "lucide-react";
 import PageText from "../components/PageText";
-import Placeholder from "../components/Placeholder";
+import { MEDIA_BASE_URL } from "@/lib/media";
 
 export const metadata: Metadata = {
   title: "Contacto",
@@ -13,12 +14,14 @@ const socialLinks = [
     label: "@lizelyn_beauty_09",
     Icon: Instagram,
     accent: "border-l-[#E1306C]",
+    iconColor: "text-[#E1306C]",
   },
   {
     href: "https://wa.me/",
-    label: "686 6767 1234",
+    label: "686 676 0123",
     Icon: MessageCircle,
     accent: "border-l-[#25D366]",
+    iconColor: "text-[#25D366]",
   },
 ];
 
@@ -26,12 +29,22 @@ export default function ContactoPage() {
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-8 px-4 py-8 sm:px-8 sm:py-12">
       <div className="grid items-start gap-8 lg:grid-cols-2">
-        <div className="relative aspect-square overflow-hidden rounded-2xl">
-          <Placeholder
-            label="Foto de Lizelyn Beauty"
-            className="absolute inset-0"
+        <a
+          href={`${MEDIA_BASE_URL}/jocelyn.jpg`}
+          target="_blank"
+          rel="noreferrer"
+          className="relative aspect-[1010/1350] overflow-hidden rounded-2xl"
+        >
+          <Image
+            src={`${MEDIA_BASE_URL}/jocelyn.jpg`}
+            alt="Jocelyn, cosmetóloga de Lizelyn Beauty"
+            fill
+            priority
+            unoptimized
+            sizes="(min-width: 1024px) 45vw, 90vw"
+            className="object-cover"
           />
-        </div>
+        </a>
 
         <div className="flex flex-col gap-4">
           <PageText title="Contáctanos">
@@ -51,12 +64,12 @@ export default function ContactoPage() {
                 href={social.href}
                 target="_blank"
                 rel="noreferrer"
-                className={`flex items-center gap-4 rounded-lg border-l-4 bg-white/10 p-4 transition-all duration-300 hover:-translate-y-2 hover:bg-white/20 ${social.accent}`}
+                className={`flex items-center gap-4 rounded-2xl border-l-4 bg-white p-4 shadow-md ring-1 ring-pink/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-pink focus-visible:ring-offset-2 focus-visible:outline-none ${social.accent}`}
               >
                 <social.Icon
                   aria-hidden="true"
                   strokeWidth={1.75}
-                  className="h-10 w-10 shrink-0"
+                  className={`h-10 w-10 shrink-0 ${social.iconColor}`}
                 />
                 <span className="text-lg font-semibold sm:text-xl">
                   {social.label}

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import PageText from "../components/PageText";
-import Placeholder from "../components/Placeholder";
+import { MEDIA_BASE_URL } from "@/lib/media";
 
 export const metadata: Metadata = {
   title: "Servicios",
@@ -28,9 +28,13 @@ export default function ServiciosPage() {
         </PageText>
 
         <div className="relative aspect-square overflow-hidden rounded-3xl">
-          <Placeholder
-            label="Foto de Lizelyn Beauty"
-            className="absolute inset-0"
+          <video
+            src={`${MEDIA_BASE_URL}/foam.mp4`}
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="absolute inset-0 h-full w-full object-cover"
           />
         </div>
       </div>
@@ -40,15 +44,17 @@ export default function ServiciosPage() {
           <h2 className="font-display text-3xl leading-tight font-bold text-pink sm:text-5xl">
             Dermaplaning
           </h2>
+          <div className="mt-4 h-1 w-64 rounded-full bg-linear-to-r from-pink to-transparent" />
           <p className="mt-4 text-lg leading-relaxed font-normal text-neutral-800 sm:text-3xl">
             Es un método de exfoliación física que utiliza una cuchilla quirúrgica para eliminar las células muertas y el vello facial fino
           </p>
         </div>
 
-        <div className="ml-auto max-w-3xl text-left sm:text-right divide-y divide-neutral-800">
+        <div className="ml-auto max-w-3xl text-left sm:text-right">
           <h2 className="font-display text-3xl leading-tight font-bold text-pink sm:text-5xl">
             Laminado de Cejas
           </h2>
+          <div className="mt-4 h-1 w-64 rounded-full bg-linear-to-r from-pink to-transparent sm:ml-auto sm:bg-linear-to-l" />
           <p className="mt-4 text-lg leading-relaxed font-normal text-neutral-800 sm:text-3xl">
             Se aplica un tratamiento químico que alisa y moldea el vello hacia arriba, fijándolo en una posición específica.
           </p>
@@ -58,6 +64,7 @@ export default function ServiciosPage() {
           <h2 className="font-display text-3xl leading-tight font-bold text-pink sm:text-5xl">
             Yoga Facial
           </h2>
+          <div className="mt-4 h-1 w-64 rounded-full bg-linear-to-r from-pink to-transparent" />
           <p className="mt-4 text-lg leading-relaxed font-normal text-neutral-800 sm:text-3xl">
             Consiste en una serie de ejercicios y estiramientos musculares para el rostro.
           </p>
@@ -67,6 +74,7 @@ export default function ServiciosPage() {
           <h2 className="font-display text-3xl leading-tight font-bold text-pink sm:text-5xl">
             Piel Sensible
           </h2>
+          <div className="mt-4 h-1 w-64 rounded-full bg-linear-to-r from-pink to-transparent sm:ml-auto sm:bg-linear-to-l" />
           <p className="mt-4 text-lg leading-relaxed font-normal text-neutral-800 sm:text-3xl">
             Un tratamiento suave y calmante, diseñado especialmente para pieles delicadas, reactivas o con tendencia a enrojecerse. 
           </p>
@@ -76,6 +84,7 @@ export default function ServiciosPage() {
           <h2 className="font-display text-3xl leading-tight font-bold text-pink sm:text-5xl">
             Nutrición
           </h2>
+          <div className="mt-4 h-1 w-64 rounded-full bg-linear-to-r from-pink to-transparent" />
           <p className="mt-4 text-lg leading-relaxed font-normal text-neutral-800 sm:text-3xl">
             Tratamiento con mascarillas para restaurar la luminosidad.
           </p>
@@ -85,6 +94,7 @@ export default function ServiciosPage() {
           <h2 className="font-display text-3xl leading-tight font-bold text-pink sm:text-5xl">
             Piel Madura
           </h2>
+          <div className="mt-4 h-1 w-64 rounded-full bg-linear-to-r from-pink to-transparent sm:ml-auto sm:bg-linear-to-l" />
           <p className="mt-4 text-lg leading-relaxed font-normal text-neutral-800 sm:text-3xl">
             Tratamiento especializado para revitalizar, reafirmar y nutrir la piel con signos de envejecimiento.
           </p>

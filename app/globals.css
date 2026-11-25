@@ -19,3 +19,21 @@ body {
   color: #262626;
   font-family: var(--font-source-sans), Arial, Helvetica, sans-serif;
 }
+
+:root {
+  --toastify-font-family: var(--font-source-sans), Arial, Helvetica, sans-serif;
+  --toastify-color-light: #ffffff;
+  --toastify-text-color-light: #262626;
+  --toastify-color-success: #b04b40;
+  --toastify-icon-color-success: #b04b40;
+  --toastify-color-progress-success: #b04b40;
+  --toastify-toast-bd-radius: 1rem;
+}
+
+.Toastify__toast {
+  border-left: 6px solid var(--color-pink);
+}
+
+body:has(dialog[open]) {
+  overflow: hidden;
+}
